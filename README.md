@@ -3,8 +3,11 @@
 * You can control the rancher server with several option by "service" command
 
 ## Install
-*
-
+```
+curl -sL bit.ly/rancher_ctl -o ./rancher
+sudo chmod 755 ./rancher
+sudo cp ./rancher /etc/init.d/
+```
 
 ## How to use
 * ex) for start the rancher
