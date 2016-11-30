@@ -1,0 +1,85 @@
+#!/bin/bash
+
+BARR="====================================================="
+
+## Outfile for error check
+check_file="/tmp/output.err"
+
+## Rancher setting
+data_dir="/data/src/rancher_data/mysql"
+port="8443"
+rancher_image="rancher/server:v1.2.0-pre3"
+
+
+
+## check the docker command
+docker 2> $check_file
+	if [[ `(grep "not found" $check_file)` != "" ]];then
+		echo "$BARR"
+		echo " You need to install the Docker first !!"
+	fi
+
+## check the sudo command
+sudo 2> $check_file
+	if [[ `(grep "not found" $check_file)` = "" ]];then
+		SUOD="sudo"
+	else
+		SUDO=""
+	fi
+
+return_check(){
+	Result=`grep 'Error' $check_file`
+		if [[ $Result != "" ]];then
+			cat $check_file
+			exit 1;
+		fi
+	rm -f $check_file
+}
+
+rancher_start (){
+	$SUDO docker run -d -v $data_dir:/var/lib/mysql -p $port:8080  --restart=unless-stopped $rancher_image  2> $check_file
+	return_check
+	echo "$BARR"
+	echo " Rancher server has been started :)"
+}
+
+
+rancher_status (){
+	echo "$BARR"
+	docker ps | head -1
+	docker ps |grep $rancher_image
+}
+
+
+rancher_stop (){
+	Rancher_id=`docker ps |grep $rancher_image | awk '{print $1}'`
+	docker stop $Rancher_id  2> $check_file
+	return_check
+	echo "$BARR"
+	echo " Rancher server has been stopped!!"
+	echo " Data directory is -> $data_dir"
+	echo " Docker container ID was -> $Rancher_id"
+}
+
+
+	case $1 in
+		start )
+			rancher_start
+			rancher_status
+			;;
+		status )
+			rancher_status
+			;;
+		stop )
+			rancher_stop
+			;;
+		restart )
+			rancher_stop
+			rancher_start
+			rancher_status
+			;;
+		*)
+			echo "$BARR"
+			echo " You can control the rancher as these options [ start / stop / status / restart ]"
+	esac
+	echo "$BARR"
