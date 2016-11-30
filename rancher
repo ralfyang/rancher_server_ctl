@@ -6,37 +6,54 @@ BARR="====================================================="
 check_file="/tmp/output.err"
 
 ## Rancher setting
-data_dir="/data/src/rancher_data/mysql"
+base_dir="/data/src/rancher_data"
+data_dir="$base_dir/mysql"
 port="8443"
 rancher_image="rancher/server:v1.2.0-pre3"
-
-
-
-## check the docker command
-docker 2> $check_file
-	if [[ `(grep "not found" $check_file)` != "" ]];then
-		echo "$BARR"
-		echo " You need to install the Docker first !!"
-	fi
 
 ## check the sudo command
 sudo 2> $check_file
 	if [[ `(grep "not found" $check_file)` = "" ]];then
-		SUOD="sudo"
+		SUDO="sudo"
 	else
 		SUDO=""
 	fi
 
+rancher_data_dir_check(){
+	if [[ ! -d $data_dir ]];then
+		$SUDO docker run -d $rancher_image
+		echo " Trying to make a new database. "
+		echo " Please wait for 4 mins...."
+		sleep 240
+		tmp_rancher_id=`$SUDO docker ps -a | grep "$rancher_image" | head -1 | awk '{print $1}'`
+		$SUDO mkdir -p $base_dir
+		$SUDO docker stop $tmp_rancher_id
+		$SUDO docker cp $tmp_rancher_id:/var/lib/mysql $base_dir
+		$SUDO chown -R 102:105 $data_dir
+		$SUDO docker rm $tmp_rancher_id
+	else
+		$SUDO chown -R 102:105 $data_dir
+	fi
+}
+
+## check the docker command
+$SUDO docker 1> /dev/null 2>  $check_file
+	if [[ `($SUDO grep "not found" $check_file)` != "" ]];then
+		echo "$BARR"
+		echo " You need to install the Docker first !!"
+	fi
+
 return_check(){
-	Result=`grep 'Error' $check_file`
+	Result=`$SUDO grep 'Error' $check_file`
 		if [[ $Result != "" ]];then
 			cat $check_file
 			exit 1;
 		fi
-	rm -f $check_file
+	$SUDO rm -f $check_file
 }
 
 rancher_start (){
+	rancher_data_dir_check
 	$SUDO docker run -d -v $data_dir:/var/lib/mysql -p $port:8080  --restart=unless-stopped $rancher_image  2> $check_file
 	return_check
 	echo "$BARR"
@@ -46,14 +63,14 @@ rancher_start (){
 
 rancher_status (){
 	echo "$BARR"
-	docker ps | head -1
-	docker ps |grep $rancher_image
+	$SUDO docker ps | head -1
+	$SUDO docker ps |grep $rancher_image
 }
 
 
 rancher_stop (){
-	Rancher_id=`docker ps |grep $rancher_image | awk '{print $1}'`
-	docker stop $Rancher_id  2> $check_file
+	Rancher_id=`$SUDO docker ps |grep $rancher_image | awk '{print $1}'`
+	$SUDO docker stop $Rancher_id  2> $check_file
 	return_check
 	echo "$BARR"
 	echo " Rancher server has been stopped!!"
