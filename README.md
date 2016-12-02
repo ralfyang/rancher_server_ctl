@@ -73,3 +73,4 @@ vi /usr/local/bin/rancher
 data_dir="/data/src/rancher_data/mysql"
 rancher_image="rancher/server:v1.2.0-pre3"
 ```
+
