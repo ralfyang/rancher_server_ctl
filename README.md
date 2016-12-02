@@ -14,19 +14,22 @@ sudo cp ./rancher /etc/init.d/
 ```
 curl -sL bit.ly/rancher-ha -o ./rancher-ha
 sudo chmod 755 ./rancher-ha
-sudo rancher-ha
 ```
-
-
 
 
 
 ## How to use
-* ex) for start the rancher
+* ex) For start the rancher in the local
 ```
 service rancher start
 ```
 * Option: `start` `stop` `restart` `status`
+
+* ex) For start the rancher ha mode(by mysql DB uses)
+```
+sudo rancher-ha
+```
+
 
 ## Setup
 * You can change the setup as you need like below
@@ -36,4 +39,6 @@ data_dir="/data/src/rancher_data/mysql"
 port="8443"
 rancher_image="rancher/server:v1.2.0-pre3"
 ```
+
+
 
