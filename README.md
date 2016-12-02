@@ -4,6 +4,7 @@
 
 ## Install
 * For rancher local use or HA(via externel mysql)
+
 ```
 curl -sL bit.ly/rancher_ctl -o ./rancher
 sudo chmod 755 ./rancher
@@ -15,6 +16,7 @@ sudo cp ./rancher /usr/local/bin
 
 
 * For Rancher HA (Use the rancher-ha mode only Manualy - Not recommended)
+
 ```
 curl -sL bit.ly/rancher-ha -o ./rancher-ha
 sudo chmod 755 ./rancher-ha
@@ -24,6 +26,7 @@ sudo chmod 755 ./rancher-ha
 
 ## How to use
 * ex) For start the rancher in the local
+
 ```
 service rancher start
 or
@@ -50,10 +53,7 @@ rancher
 
 ## Setup
 * You can change the re-setup by clear option
-```
 
-
-* Clear the Rancher configuration if you need.
 ```
 ./rancher clear
 =====================================================
@@ -63,7 +63,9 @@ y
 =====================================================
 ```
 
-## You can change the Rancher setting manually as below
+* You can change the Rancher setting manually as below
+
+```
 vi /etc.init.d/rancher
 or
 vi /usr/local/bin/rancher
@@ -71,4 +73,3 @@ vi /usr/local/bin/rancher
 data_dir="/data/src/rancher_data/mysql"
 rancher_image="rancher/server:v1.2.0-pre3"
 ```
-
