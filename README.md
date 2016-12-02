@@ -3,11 +3,23 @@
 * You can control the rancher server with several option by "service" command
 
 ## Install
+* For local rancher
 ```
 curl -sL bit.ly/rancher_ctl -o ./rancher
 sudo chmod 755 ./rancher
 sudo cp ./rancher /etc/init.d/
 ```
+
+* For Rancher HA
+```
+curl -sL bit.ly/rancher-ha -o ./rancher-ha
+sudo chmod 755 ./rancher-ha
+sudo rancher-ha
+```
+
+
+
+
 
 ## How to use
 * ex) for start the rancher
