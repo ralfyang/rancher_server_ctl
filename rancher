@@ -1,15 +1,23 @@
 #!/bin/bash
-
+#Version 0.2
 BARR="====================================================="
 
 ## Outfile for error check
 check_file="/tmp/output.err"
 
 ## Rancher setting
-base_dir="/data/src/rancher_data"
-data_dir="$base_dir/mysql"
-port="8443"
+#rancher_DB_dir="/data/src/rancher_data"
 rancher_image="rancher/server:latest"
+
+conf_dir="/tmp/rancher_tmp"
+conf_file="$conf_dir/rancher_ha.conf"
+	if [[ ! -d $conf_dir  ]];then
+		mkdir -p $conf_dir
+	fi
+
+	if [[ ! -f $conf_file  ]];then
+		touch $conf_file
+	fi
 
 ## check the sudo command
 sudo 2> $check_file
@@ -19,6 +27,60 @@ sudo 2> $check_file
 		SUDO=""
 	fi
 
+conf_check(){
+	target_conf=$@
+	return_variable=""
+	if [[ `(grep $target_conf $conf_file | awk -F '=' '{print $2}' |sed -e 's/"//g' -e "s/'//g" )` = "" ]];then
+		echo " -- Please insert the \"$target_conf\" information --"
+		read return_variable
+		echo "$target_conf=\"$return_variable\"" >> $conf_file
+	fi
+}
+
+ha_mode_check(){
+	target_conf=$@
+	return_variable=""
+	if [[ `(grep "ha_mode" $conf_file | awk -F '=' '{print $2}' |sed -e 's/"//g' -e "s/'//g" )` = "" ]];then
+		echo " -- Do you have database for Rancher server HA mode ? [ y / n ] --"
+		read return_variable
+		echo "ha_mode=\"$return_variable\"" >> $conf_file
+	fi
+}
+
+
+## check the conf file for rancher port check
+conf_check rancher_server_port
+
+## check the HA mode
+ha_mode_check ha_mode
+
+## Get configuration
+source $conf_file
+
+data_dir="$rancher_DB_dir/mysql"
+
+rancher_ha_mode(){
+	conf_check mysql_host
+	conf_check mysql_port
+	conf_check mysql_db_name
+	conf_check mysql_user
+
+	## You can change the configuration as you want into below config
+	source $conf_file
+
+	echo " -- Please insert a mysql \"$mysql_user\" password -- "
+	read -s user_password
+
+	$SUDO docker run -d --restart=always -p $rancher_server_port:8080 \
+	-e CATTLE_DB_CATTLE_MYSQL_HOST=$mysql_host \
+	-e CATTLE_DB_CATTLE_MYSQL_PORT=$mysql_port \
+	-e CATTLE_DB_CATTLE_MYSQL_NAME=$mysql_db_name \
+	-e CATTLE_DB_CATTLE_USERNAME=$mysql_user \
+	-e CATTLE_DB_CATTLE_PASSWORD=$user_password \
+	$rancher_image
+}
+
+
 rancher_data_dir_check(){
 	if [[ ! -d $data_dir ]];then
 		$SUDO docker run -d $rancher_image
@@ -26,9 +88,9 @@ rancher_data_dir_check(){
 		echo " Please wait for 4 mins...."
 		sleep 240
 		tmp_rancher_id=`$SUDO docker ps -a | grep "$rancher_image" | head -1 | awk '{print $1}'`
-		$SUDO mkdir -p $base_dir
+		$SUDO mkdir -p $rancher_DB_dir
 		$SUDO docker stop $tmp_rancher_id
-		$SUDO docker cp $tmp_rancher_id:/var/lib/mysql $base_dir
+		$SUDO docker cp $tmp_rancher_id:/var/lib/mysql $rancher_DB_dir
 		$SUDO chown -R 102:105 $data_dir
 		$SUDO docker rm $tmp_rancher_id
 	else
@@ -53,11 +115,15 @@ return_check(){
 }
 
 rancher_start (){
-	rancher_data_dir_check
-	$SUDO docker run -d -v $data_dir:/var/lib/mysql -p $port:8080  --restart=unless-stopped $rancher_image  2> $check_file
-	return_check
-	echo "$BARR"
-	echo " Rancher server has been started :)"
+	if [[ $ha_mode = "y" ]];then
+		rancher_ha_mode
+	else
+		rancher_data_dir_check
+		$SUDO docker run -d -v $data_dir:/var/lib/mysql -p $rancher_server_port:8080  --restart=unless-stopped $rancher_image  2> $check_file
+		return_check
+		echo "$BARR"
+		echo " Rancher server has been started :)"
+	fi
 }
 
 
@@ -79,6 +145,17 @@ rancher_stop (){
 }
 
 
+conf_reset(){
+	echo "$BARR"
+	echo " --  Do you want to clear the configuration of rancher_ctl ? [ y / n ] "
+	read clearing
+		if [[ $clearing = "y"  ]];then
+			rm -f $conf_file
+			echo " $conf_file has been deleted !!"
+		else
+			echo " --- Canceled ---"
+		fi
+}
 	case $1 in
 		start )
 			rancher_start
@@ -95,8 +172,11 @@ rancher_stop (){
 			rancher_start
 			rancher_status
 			;;
+		clear )
+			conf_reset
+			;;
 		*)
 			echo "$BARR"
-			echo " You can control the rancher as these options [ start / stop / status / restart ]"
+			echo " You can control the rancher as these options [ start / stop / status / restart / clear ]"
 	esac
 	echo "$BARR"

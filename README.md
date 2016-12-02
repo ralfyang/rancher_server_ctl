@@ -3,14 +3,18 @@
 * You can control the rancher server with several option by "service" command
 
 ## Install
-* For local rancher
+* For rancher local use or HA(via externel mysql)
 ```
 curl -sL bit.ly/rancher_ctl -o ./rancher
 sudo chmod 755 ./rancher
+
 sudo cp ./rancher /etc/init.d/
+or
+sudo cp ./rancher /usr/local/bin
 ```
 
-* For Rancher HA
+
+* For Rancher HA (Use the rancher-ha mode only Manualy - Not recommended)
 ```
 curl -sL bit.ly/rancher-ha -o ./rancher-ha
 sudo chmod 755 ./rancher-ha
@@ -22,23 +26,49 @@ sudo chmod 755 ./rancher-ha
 * ex) For start the rancher in the local
 ```
 service rancher start
-```
-* Option: `start` `stop` `restart` `status`
+or
+rancher start
 
-* ex) For start the rancher ha mode(by mysql DB uses)
+## Automatic check the setup at 1st time
+ -- Please insert the "rancher_server_port" information --
+8443
+ -- Do you have database for Rancher server HA mode ? [ y / n ] --
+y
+ -- Please insert the "mysql_host" information --
+10.0.0.2
+ -- Please insert the "mysql_port" information --
+3306
+ -- Please insert the "mysql_db_name" information --
+rancher_db
+ -- Please insert the "mysql_user" information --
+rancher
+ -- Please insert a mysql "rancher" password --
+
 ```
-sudo rancher-ha
-```
+* Option: `start` `stop` `restart` `status` `clear`
 
 
 ## Setup
-* You can change the setup as you need like below
+* You can change the re-setup by clear option
 ```
-## Rancher setting
+
+
+* Clear the Rancher configuration if you need.
+```
+./rancher clear
+=====================================================
+ --  Do you want to clear the configuration of rancher_ctl ? [ y / n ]
+y
+ /tmp/rancher_tmp/rancher_ha.conf has been deleted !!
+=====================================================
+```
+
+## You can change the Rancher setting manually as below
+vi /etc.init.d/rancher
+or
+vi /usr/local/bin/rancher
+
 data_dir="/data/src/rancher_data/mysql"
-port="8443"
 rancher_image="rancher/server:v1.2.0-pre3"
 ```
-
-
 
