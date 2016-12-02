@@ -1,11 +1,5 @@
 #!/bin/bash
 
-#rancher_server_port="8443"
-#mysql_host="rankingdb.cikreqqelt0k.ap-northeast-2.rds.amazonaws.com"
-#mysql_port="3306"
-#mysql_db_name="rancher"
-#mysql_user="admin"
-
 conf_dir="/tmp/rancher_tmp"
 conf_file="$conf_dir/rancher_ha.conf"
 

@@ -9,7 +9,7 @@ check_file="/tmp/output.err"
 base_dir="/data/src/rancher_data"
 data_dir="$base_dir/mysql"
 port="8443"
-rancher_image="rancher/server:v1.2.0-pre3"
+rancher_image="rancher/server:latest"
 
 ## check the sudo command
 sudo 2> $check_file
