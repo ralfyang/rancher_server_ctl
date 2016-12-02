@@ -1,0 +1,59 @@
+#!/bin/bash
+
+#rancher_server_port="8443"
+#mysql_host="rankingdb.cikreqqelt0k.ap-northeast-2.rds.amazonaws.com"
+#mysql_port="3306"
+#mysql_db_name="rancher"
+#mysql_user="admin"
+
+conf_dir="/tmp/rancher_tmp"
+conf_file="$conf_dir/rancher_ha.conf"
+
+	if [[ ! -d $conf_dir  ]];then
+		mkdir -p $conf_dir
+	fi
+
+	if [[ ! -f $conf_file  ]];then
+		touch $conf_file
+	fi
+
+conf_check(){
+target_conf=$@
+return_variable=""
+	if [[ `(grep $target_conf $conf_file | awk -F '=' '{print $2}' |sed -e 's/"//g' -e "s/'//g" )` = "" ]];then
+		echo " -- Please insert the \"$target_conf\" information --"
+		read return_variable
+		echo "$target_conf=\"$return_variable\"" >> $conf_file
+	fi
+
+}
+
+conf_check rancher_server_port
+conf_check mysql_host
+conf_check mysql_port
+conf_check mysql_db_name
+conf_check mysql_user
+
+
+## You can change the configuration as you want into below config
+source $conf_file
+
+
+
+user_password=$1
+
+
+	if [[ $user_password = "" ]];then
+		echo " -- Please insert a mysql \"$mysql_user\" password -- "
+		read -s user_password
+	fi
+
+
+sudo docker run -d --restart=always -p $rancher_server_port:8080 \
+-e CATTLE_DB_CATTLE_MYSQL_HOST=$mysql_host \
+-e CATTLE_DB_CATTLE_MYSQL_PORT=$mysql_port \
+-e CATTLE_DB_CATTLE_MYSQL_NAME=$mysql_db_name \
+-e CATTLE_DB_CATTLE_USERNAME=$mysql_user \
+-e CATTLE_DB_CATTLE_PASSWORD=$user_password \
+rancher/server:latest
+
