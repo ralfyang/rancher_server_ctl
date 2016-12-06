@@ -1,5 +1,5 @@
 #!/bin/bash
-#Version 0.2
+#Version 0.3
 BARR="====================================================="
 
 ## Outfile for error check
@@ -48,6 +48,16 @@ ha_mode_check(){
 }
 
 
+notification(){
+	echo "$BARR"
+	echo " You can control the rancher as these options [ start / run / stop / status / restart / clear ]"
+}
+
+	if [[ $1 = "" ]];then
+		notification
+		exit 0
+	fi
+
 ## check the conf file for rancher port check
 conf_check rancher_server_port
 
@@ -60,6 +70,7 @@ source $conf_file
 data_dir="$rancher_DB_dir/mysql"
 
 rancher_ha_mode(){
+runtime_mode=$1
 	conf_check mysql_host
 	conf_check mysql_port
 	conf_check mysql_db_name
@@ -71,7 +82,7 @@ rancher_ha_mode(){
 	echo " -- Please insert a mysql \"$mysql_user\" password -- "
 	read -s user_password
 
-	$SUDO docker run -d --restart=always -p $rancher_server_port:8080 \
+	$SUDO docker run $runtime_mode --restart=always -p $rancher_server_port:8080 \
 	-e CATTLE_DB_CATTLE_MYSQL_HOST=$mysql_host \
 	-e CATTLE_DB_CATTLE_MYSQL_PORT=$mysql_port \
 	-e CATTLE_DB_CATTLE_MYSQL_NAME=$mysql_db_name \
@@ -115,11 +126,20 @@ return_check(){
 }
 
 rancher_start (){
+
+## check for runtime mode or daemnon
+runtime_mode=$1
+	if [[ $runtime_mode = "run" ]];then
+		daemon_option=""
+	else
+		daemon_option="-d"
+	fi
+
 	if [[ $ha_mode = "y" ]];then
-		rancher_ha_mode
+		rancher_ha_mode $daemon_option
 	else
 		rancher_data_dir_check
-		$SUDO docker run -d -v $data_dir:/var/lib/mysql -p $rancher_server_port:8080  --restart=unless-stopped $rancher_image  2> $check_file
+		$SUDO docker run $daemon_option -v $data_dir:/var/lib/mysql -p $rancher_server_port:8080  --restart=unless-stopped $rancher_image  2> $check_file
 		return_check
 		echo "$BARR"
 		echo " Rancher server has been started :)"
@@ -161,6 +181,10 @@ conf_reset(){
 			rancher_start
 			rancher_status
 			;;
+		run )
+			rancher_start run
+			rancher_status
+			;;
 		status )
 			rancher_status
 			;;
@@ -176,7 +200,6 @@ conf_reset(){
 			conf_reset
 			;;
 		*)
-			echo "$BARR"
-			echo " You can control the rancher as these options [ start / stop / status / restart / clear ]"
+			notification
 	esac
 	echo "$BARR"
